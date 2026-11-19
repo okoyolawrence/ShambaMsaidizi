@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Shamba Msaidizi – Samburu Farmer Assistant</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+--bg:#faf6ee;--card:#fff;--ink:#2a2418;--mut:#6f6552;--pri:#b4491f;--pri2:#fff;--acc:#2f6b3a;--line:#e6dcc8;--warn:#fff1d6}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1b1812;--card:#26221a;--ink:#f3ecdc;--mut:#b3a78f;--pri:#e0743f;--pri2:#1b1812;--acc:#7cc48a;--line:#3a3427;--warn:#3a2f14}}
+:root[data-theme="dark"]{--bg:#1b1812;--card:#26221a;--ink:#f3ecdc;--mut:#b3a78f;--pri:#e0743f;--pri2:#1b1812;--acc:#7cc48a;--line:#3a3427;--warn:#3a2f14}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+header{padding:16px 16px 8px;max-width:640px;margin:0 auto}
+h1{margin:0;font-size:22px}
+.sub{color:var(--mut);font-size:14px;margin-top:2px}
+nav{display:flex;gap:6px;padding:8px 16px;max-width:640px;margin:0 auto;position:sticky;top:env(safe-area-inset-top,0px);background:var(--bg);z-index:2}
+nav button{flex:1;padding:10px 2px;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:10px;font:inherit;font-size:13px;font-weight:600}
+nav button.on{background:var(--pri);color:var(--pri2);border-color:var(--pri)}
+main{max-width:640px;margin:0 auto;padding:8px 16px 40px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin:10px 0}
+label{display:block;font-size:13px;font-weight:600;color:var(--mut);margin:10px 0 4px}
+select,textarea{width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);font:inherit}
+textarea{min-height:84px;resize:vertical}
+.go{width:100%;margin-top:12px;padding:13px;border:0;border-radius:12px;background:var(--pri);color:var(--pri2);font:inherit;font-weight:700}
+.go:disabled{opacity:.6}
+.ans{white-space:pre-wrap;margin-top:12px}
+.note{background:var(--warn);border-radius:10px;padding:10px;font-size:13px;margin-top:10px}
+.row{display:flex;gap:8px}.row>*{flex:1}
+.season{display:flex;gap:10px;padding:10px;border:1px solid var(--line);border-radius:12px;margin:8px 0}
+.season.now{border:2px solid var(--acc);background:color-mix(in srgb,var(--acc) 10%,var(--card))}
+.season b{display:block}.season span{font-size:14px;color:var(--mut)}
+.tag{font-size:11px;font-weight:700;color:var(--acc);text-transform:uppercase}
+details{border-top:1px solid var(--line);padding:8px 0}
+details:first-of-type{border-top:0}
+summary{font-weight:600;cursor:pointer}
+details p{margin:6px 0 2px;font-size:15px}
+.lang{float:right;font-size:13px}
+.lang select{width:auto;padding:4px 6px}
+[hidden]{display:none!important}
+input[type=text],input[type=tel],input[type=password]{width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);font:inherit}
+</style>
+</head>
+<body>
+<header>
+  <div class="lang"><select id="lang" aria-label="Language"><option value="English">English</option><option value="Kiswahili">Kiswahili</option><option value="Maa">Maa (Samburu)</option></select></div>
+  <h1>🌾 Shamba Msaidizi</h1>
+  <div class="sub">Farmer assistant for Samburu County</div>
+  <div class="note" id="maaNote" hidden>Maa replies are written by AI and may have mistakes. English is shown too. Please confirm with an elder or extension officer.</div>
+</header>
+<div id="who" hidden style="max-width:640px;margin:0 auto;padding:0 16px;font-size:14px;color:var(--mut)"><span id="whoName"></span> · <a href="#" id="logout" style="color:var(--pri)">Log out</a></div>
+<section id="auth" hidden style="max-width:640px;margin:0 auto;padding:8px 16px">
+  <div class="card">
+    <b>Karibu! Welcome, farmer</b>
+    <div class="sub">Log in with your phone number and a PIN to use the assistant and keep your farm records safe.</div>
+    <label for="aPhone">Phone number</label>
+    <input id="aPhone" type="tel" inputmode="tel" autocomplete="tel" placeholder="0712 345 678">
+    <div id="regF" hidden>
+      <label for="aName">Your name</label>
+      <input id="aName" type="text" autocomplete="name">
+      <label for="aArea">Sub-county</label>
+      <select id="aArea"><option>Samburu West (Maralal)</option><option>Samburu North (Baragoi)</option><option>Samburu East (Wamba)</option></select>
+    </div>
+    <label for="aPin" id="aPinL">PIN (4 to 6 numbers)</label>
+    <input id="aPin" type="password" inputmode="numeric" autocomplete="current-password" maxlength="6">
+    <div id="codeF" hidden><button class="go" id="aSend" type="button" style="background:var(--card);color:var(--ink);border:1px solid var(--line)">Send code to my phone</button>
+      <label for="aCode">SMS code (6 numbers)</label>
+      <input id="aCode" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6"></div>
+    <button class="go" id="aSubmit">Log in</button>
+    <div id="aErr" role="alert" style="color:var(--pri);margin-top:8px"></div>
+    <p><a href="#" id="aSw" style="color:var(--pri)">New here? Register</a> &nbsp;·&nbsp; <a href="#" id="aFg" style="color:var(--pri)">Forgot PIN?</a></p>
+    <div class="note">Do not share your PIN. Pick numbers others cannot guess.</div>
+  </div>
+</section>
+<nav>
+  <button id="t1" class="on">Crop Doctor</button>
+  <button id="t2">Weather</button>
+  <button id="t3">Quick Guide</button>
+  <button id="t4">My Farm</button>
+</nav>
+<main>
+
+<section id="p1">
+  <div class="card">
+    <label for="crop">Crop</label>
+    <select id="crop">
+      <option>Maize</option><option>Sorghum</option><option>Millet</option><option>Beans</option><option>Cowpeas</option>
+      <option>Kale (sukuma wiki)</option><option>Tomatoes</option><option>Onions</option><option>Other</option>
+    </select>
+    <label for="part">Where is the problem?</label>
+    <select id="part"><option>Leaves</option><option>Stem</option><option>Roots / whole plant wilting</option><option>Grain / pods / fruit</option><option>Not sure</option></select>
+    <div id="photoBox"><label for="photo">Photo of the sick plant (optional)</label>
+    <input type="file" id="photo" accept="image/*" capture="environment">
+    <img id="prev" alt="Selected plant photo" hidden style="max-width:100%;max-height:220px;border-radius:10px;margin-top:8px"></div>
+    <label for="sym">What do you see? (spots, colour, holes, insects, how many plants…)</label>
+    <textarea id="sym" placeholder="e.g. Yellow stripes on young leaves, small holes, sawdust-like droppings in the whorl"></textarea>
+    <button class="go" id="diag">Get advice</button>
+    <div class="ans" id="diagOut"></div>
+    <div class="note">Advice is a guide, not a lab diagnosis. For chemicals, read the label, wear gloves and a mask, and confirm with your County Agricultural Extension Officer.</div>
+  </div>
+</section>
+
+<section id="p2" hidden>
+  <div class="card">
+    <b>Samburu rainfall calendar</b>
+    <div class="sub">Typical pattern. Rains are erratic and vary year to year.</div>
+    <div id="seasons"></div>
+  </div>
+  <div class="card">
+    <b>Your outlook helper</b>
+    <div class="sub">Tell it what you have seen on your farm. It gives planning advice based on the usual seasonal pattern, not a satellite forecast.</div>
+    <div class="row">
+      <div><label for="rain">Rain, last 2 weeks</label><select id="rain"><option>None</option><option>Light, patchy</option><option>Moderate</option><option>Heavy</option></select></div>
+      <div><label for="soil">Soil</label><select id="soil"><option>Dry & cracked</option><option>Slightly damp</option><option>Wet</option></select></div>
+    </div>
+    <label for="plan">What are you planning?</label>
+    <select id="plan"><option>Planting</option><option>Weeding</option><option>Harvesting & drying grain</option><option>Water & pasture planning</option></select>
+    <button class="go" id="wx">Get weather-smart advice</button>
+    <div class="ans" id="wxOut"></div>
+    <div class="note">For official forecasts and alerts, check the Kenya Meteorological Department (meteo.go.ke) or your county's weather bulletins. Rely on them for dates and amounts.</div>
+  </div>
+</section>
+
+<section id="p3" hidden>
+  <div class="card" id="guide"></div>
+  <div class="note">Works without AI. Tap a problem to see signs and what to do.</div>
+</section>
+
+<section id="p4" hidden>
+  <div class="card">
+    <b>Farm record log</b>
+    <div class="sub">Saved on this phone only. Use the same phone and browser to see it again.</div>
+    <div class="row">
+      <div><label for="ld">Date</label><input type="date" id="ld" style="width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);font:inherit"></div>
+      <div><label for="lc">Crop</label><select id="lc"></select></div>
+    </div>
+    <label for="la">What happened?</label>
+    <select id="la"><option>Planted</option><option>Weeded</option><option>Added manure / fertiliser</option><option>Sprayed / pest control</option><option>Pest or disease seen</option><option>Rain recorded</option><option>Harvested</option><option>Sold / stored</option></select>
+    <label for="ln">Notes (amount, field, mm of rain…)</label>
+    <textarea id="ln" style="min-height:56px"></textarea>
+    <button class="go" id="ladd">Save record</button>
+  </div>
+  <div class="card"><div id="llist"></div>
+    <button class="go" id="lai" style="margin-top:8px">Review my records with AI</button>
+    <div class="ans" id="laiOut"></div></div>
+</section>
+
+</main>
+<script>
+const $=id=>document.getElementById(id);
+let serverMode=false,user=null;
+const seasons=[
+ {m:[0,1],n:"Jan–Feb · Hot dry spell",d:"Little rain. Store water, repair terraces and fences, plan seed. Watch livestock water."},
+ {m:[2,3,4],n:"Mar–May · Long rains",d:"Main planting window, but start is often uneven. Plant after soaking rains; use drought-tolerant sorghum, millet, cowpeas. Watch for fungal diseases in wet spells."},
+ {m:[5,6,7,8],n:"Jun–Sep · Cool, dry & windy",d:"Harvest, dry and store grain safely. Irrigate small kitchen gardens. Protect soil from wind erosion."},
+ {m:[9,10,11],n:"Oct–Dec · Short rains",d:"Second planting window; peak usually Nov. Fast-maturing seed works best. Weed early and watch for armyworm and blight."}
+];
+const mo=new Date().getMonth();
+$("seasons").innerHTML=seasons.map(s=>`<div class="season${s.m.includes(mo)?' now':''}"><div>${s.m.includes(mo)?'<div class="tag">Now</div>':''}<b>${s.n}</b><span>${s.d}</span></div></div>`).join("");
+
+const guide=[
+ ["Fall armyworm (maize, sorghum)","Ragged leaf holes, sawdust-like droppings in the whorl, caterpillars hiding inside.","Scout weekly. Hand-pick small infestations; puff dry sand or ash into whorls. Use a registered biopesticide (Bt or neem-based) early, in the evening, aiming into the whorl. Ask your extension officer for registered options."],
+ ["Maize lethal necrosis (MLN)","Yellow streaks from leaf edges, dying young leaves ('dead heart'), small deformed cobs.","No cure. Uproot and burn affected plants, control insects, rotate with beans or cowpeas, and never replant maize seed from infected plants. Use certified clean seed."],
+ ["Maize streak virus","Fine yellow streaks along the veins, stunted plants.","Spread by leafhoppers. Remove infected plants, plant early, use tolerant varieties, keep fields weed-free."],
+ ["Sorghum smut / head diseases","Black powdery sacs replacing grain; grey spots on leaves in humid spells.","Use clean seed, rotate crops, remove and burn affected heads before they burst."],
+ ["Striga (witchweed)","Pink or purple weed emerging near the crop; crop yellow and stunted.","Hand-pull before it flowers. Rotate with cowpeas, apply manure, use resistant sorghum or maize."],
+ ["Bean rust / angular leaf spot","Rust-coloured pustules or angular brown spots on leaves.","Space plants for airflow, avoid working in wet fields, rotate, remove badly infected plants. Seek advice on fungicides for severe cases."],
+ ["Tomato late blight / bacterial wilt","Dark water-soaked patches that spread, or sudden wilting while leaves stay green.","Stake and mulch, water at the base not leaves, remove infected plants. Do not plant tomatoes, potatoes or peppers in the same soil for 2–3 seasons."],
+ ["Kale and cabbage aphids / black rot","Curled leaves with sticky insects, or V-shaped yellow patches from the leaf edge.","Wash off aphids, spray soapy water or neem. Use clean seed, rotate crops, remove rotting leaves."],
+ ["Termites","Wilting plants, hollow roots, mud tunnels.","Apply well-rotted manure, mulch lightly, destroy nearby mounds with extension guidance, avoid fresh uncomposted residue."]
+];
+$("guide").innerHTML=guide.map(g=>`<details><summary>${g[0]}</summary><p><b>Signs:</b> ${g[1]}</p><p><b>Do:</b> ${g[2]}</p></details>`).join("");
+
+["t1","t2","t3","t4"].forEach((t,i)=>$(t).onclick=()=>{
+  ["t1","t2","t3","t4"].forEach((x,j)=>{$(x).classList.toggle("on",i===j);$("p"+(j+1)).hidden=i!==j});
+});
+
+// When not running on claude.ai, use this site's own /api/ask (see server)
+function shrink(file){return new Promise((ok,no)=>{const im=new Image();im.onload=()=>{const k=Math.min(1,1024/Math.max(im.width,im.height));const c=document.createElement("canvas");c.width=im.width*k;c.height=im.height*k;c.getContext("2d").drawImage(im,0,0,c.width,c.height);ok({mediaType:"image/jpeg",data:c.toDataURL("image/jpeg",.8).split(",")[1]});URL.revokeObjectURL(im.src)};im.onerror=no;im.src=URL.createObjectURL(file)})}
+const localSample=Object.assign(async(prompt,o={})=>{
+  const image=o.images?await shrink(o.images):undefined;
+  const r=await fetch("/api/ask",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({prompt,image})});
+  if(!r.ok){const e=new Error("ask failed");e.code=r.status===401?"auth":r.status===429?"rate_limited":"error";throw e}
+  const d=await r.json();if(o.onText)o.onText({text:d.text});return{text:d.text};
+},{limits:async()=>({images:{mediaTypes:["image/jpeg","image/png","image/webp"]}})});
+let sample=null;
+(async()=>{try{sample=await claude.use("sample")}catch(e){sample=null}
+ if(!sample&&location.protocol.startsWith("http")){try{const r=await fetch("/api/health");if(r.ok&&(await r.json()).ok)sample=localSample}catch(e){}}
+ if(!sample){["diag","wx","lai"].forEach(id=>{$(id).disabled=true;$(id).textContent="AI advice unavailable – see Quick Guide"})}
+ let caps=null;try{caps=sample?await sample.limits():null}catch(e){}
+ if(caps&&caps.images){$("photo").accept=caps.images.mediaTypes.join(",")}else{$("photoBox").hidden=true}})();
+$("lang").onchange=()=>{$("maaNote").hidden=$("lang").value!=="Maa"};
+$("photo").onchange=()=>{const f=$("photo").files[0];if(f){$("prev").src=URL.createObjectURL(f);$("prev").hidden=false}else{$("prev").hidden=true}};
+
+async function ask(btn,out,prompt,opts){
+  if(!sample)return;
+  btn.disabled=true;out.textContent="Thinking…";
+  const lang=$("lang").value;
+  const sys=`You are an agricultural advisor for smallholder farmers in Samburu County, Kenya (semi-arid, bimodal rainfall: long rains Mar–May, short rains Oct–Dec). ${lang==="Maa"?"Reply first in Maa (the language of the Samburu people), then repeat the same advice in English. Use simple short sentences. If you are not sure of a Maa word, use the Kiswahili or English word instead of guessing.":"Reply in "+lang+", in simple short sentences, using plain words."} Format: 1) Most likely cause (and 1 alternative), 2) What to do now (numbered, low-cost and locally available options first), 3) How to prevent it, 4) When to call an extension officer. Mention chemical safety if you suggest any, and never invent product names or doses; suggest asking for locally registered products. Be honest about uncertainty and never claim to give an exact weather forecast. Keep under 220 words.\n\n`;
+  try{
+    const r=await sample(sys+prompt,{...(opts||{}),cache:false,onText:({text})=>{out.textContent=text}});
+    out.textContent=r.text;
+  }catch(e){
+    if(e&&e.code==="auth"){out.textContent="Please log in again.";showAuth()}else out.textContent=e&&e.code==="rate_limited"?"Too many requests. Please wait a minute and try again.":"Sorry, advice could not load. Please check the Quick Guide tab.";
+  }
+  btn.disabled=false;
+}
+$("diag").onclick=()=>{
+  const s=$("sym").value.trim();
+  const ph=$("photoBox").hidden?null:$("photo").files[0];
+  if(!s&&!ph){$("diagOut").textContent="Please describe what you see, or add a photo.";return}
+  ask($("diag"),$("diagOut"),`Crop: ${$("crop").value}\nAffected part: ${$("part").value}\nFarmer's description: ${s||"(none, see photo)"}${ph?"\nA photo of the plant is attached. Say what you can see in it, and say clearly if it is too blurry or dark to judge.":""}\nCurrent month: ${new Date().toLocaleString("en",{month:"long"})}`,ph?{images:ph}:undefined);
+};
+$("wx").onclick=()=>ask($("wx"),$("wxOut"),`Task: weather-aware farm planning. Current month: ${new Date().toLocaleString("en",{month:"long"})}.\nObserved rain in last 2 weeks: ${$("rain").value}\nSoil: ${$("soil").value}\nFarmer is planning: ${$("plan").value}\nGive practical advice using the typical Samburu seasonal pattern and what the farmer observed. State clearly this is not an official forecast.`);
+
+// Farm log (stored on this device only)
+const KEY="shamba-log";let log=[];
+try{log=JSON.parse(localStorage.getItem(KEY)||"[]")}catch(e){log=[]}
+const save=()=>{if(serverMode)return;try{localStorage.setItem(KEY,JSON.stringify(log))}catch(e){}};
+$("lc").innerHTML=$("crop").innerHTML;
+$("ld").value=new Date().toISOString().slice(0,10);
+function drawLog(){
+  const L=$("llist");L.textContent="";
+  if(!log.length){L.textContent="No records yet.";return}
+  log.slice().sort((a,b)=>b.d.localeCompare(a.d)||b.id-a.id).forEach(r=>{
+    const d=document.createElement("div");d.className="season";
+    const t=document.createElement("div");t.style.flex="1";
+    const b=document.createElement("b");b.textContent=r.a+" · "+r.c;
+    const m=document.createElement("span");m.textContent=r.d+(r.n?" — "+r.n:"");
+    t.append(b,m);
+    const x=document.createElement("button");x.textContent="✕";x.setAttribute("aria-label","Delete record");
+    x.style.cssText="border:0;background:none;color:var(--mut);font-size:18px";
+    x.onclick=async()=>{if(serverMode)await api("/api/records/"+r.id,"DELETE");log=log.filter(q=>q.id!==r.id);save();drawLog()};
+    d.append(t,x);L.append(d);
+  });
+}
+$("ladd").onclick=async()=>{
+  let rec={id:Date.now(),d:$("ld").value||new Date().toISOString().slice(0,10),c:$("lc").value,a:$("la").value,n:$("ln").value.trim()};
+  if(serverMode){const r=await api("/api/records","POST",rec);if(!r.ok){if(r.status===401)showAuth();return}rec=r.d.record}
+  log.push(rec);$("ln").value="";save();drawLog();
+};
+$("lai").onclick=()=>{
+  if(!log.length){$("laiOut").textContent="Add some records first.";return}
+  const rec=log.slice().sort((a,b)=>b.d.localeCompare(a.d)).slice(0,20).map(r=>`${r.d}: ${r.c} - ${r.a}${r.n?" ("+r.n+")":""}`).join("\n");
+  ask($("lai"),$("laiOut"),`Task: review this farmer's recent record log and give 3-5 practical next steps (timing of weeding, pest checks, harvest, storage, or planting for the coming season). Point out any gaps in the records. Records:\n${rec}\nCurrent date: ${new Date().toISOString().slice(0,10)}`);
+};
+drawLog();
+
+// ---- Farmer login (only active when served by our own server) ----
+async function api(p,m,b){try{const r=await fetch(p,{method:m||"GET",headers:{"content-type":"application/json"},body:b?JSON.stringify(b):undefined});let d={};try{d=await r.json()}catch(e){}return{ok:r.ok,status:r.status,d}}catch(e){return{ok:false,status:0,d:{}}}}
+let mode="login";
+function gate(on){$("auth").hidden=!on;document.querySelector("nav").hidden=on;document.querySelector("main").hidden=on;$("who").hidden=on||!user}
+function showAuth(){user=null;log=[];drawLog();authMode("login");gate(true)}
+function authMode(m){mode=m;$("regF").hidden=m!=="reg";$("codeF").hidden=!(verify&&m!=="login");
+ $("aSubmit").textContent=m==="reg"?"Create account":m==="reset"?"Set new PIN":"Log in";
+ $("aSw").textContent=m==="login"?"New here? Register":"Back to log in";$("aFg").hidden=m!=="login";
+ $("aPinL").textContent=(m==="reset"?"New PIN":"PIN")+" (4 to 6 numbers)";$("aErr").textContent=""}
+const ERR={phone:"Enter a Kenyan phone number, for example 0712345678.",name:"Please enter your name.",pin:"PIN must be 4 to 6 numbers.",exists:"This phone number is already registered. Please log in.",invalid:"Wrong phone number or PIN.",locked:"Too many tries. Please wait 15 minutes.",rate_limited:"Too many tries. Please wait and try again.",code:"Wrong or expired code. Please ask for a new one.",wait:"Please wait a minute before asking for another code.",sms:"Could not send the SMS. Please try again later.",unavailable:"PIN reset by SMS is not available. Please ask your administrator.",x:"Something went wrong. Please try again."};
+$("aFg").onclick=e=>{e.preventDefault();if(!verify){$("aErr").textContent="To reset your PIN, please ask your administrator or extension officer.";return}authMode("reset")};
+$("aSend").onclick=async()=>{
+  $("aErr").textContent="";$("aSend").disabled=true;
+  const r=await api(mode==="reg"?"/api/register/start":"/api/reset/start","POST",{phone:$("aPhone").value});
+  setTimeout(()=>$("aSend").disabled=false,5000);
+  $("aErr").textContent=r.ok?"Code sent. Check your SMS. It can take a minute.":(ERR[r.d.error]||ERR.x);
+};
+async function setUser(u){user=u;$("whoName").textContent="Hello, "+u.name;gate(false);const r=await api("/api/records");if(r.ok){log=r.d.records;drawLog()}}
+$("aSw").onclick=e=>{e.preventDefault();authMode(mode==="login"?"reg":"login")};
+$("aSubmit").onclick=async()=>{
+  const b={phone:$("aPhone").value,pin:$("aPin").value};
+  if(mode==="reg"){b.name=$("aName").value;b.area=$("aArea").value}
+  if(mode!=="login")b.code=$("aCode").value;
+  $("aSubmit").disabled=true;
+  const r=await api({login:"/api/login",reg:"/api/register",reset:"/api/reset"}[mode],"POST",b);
+  $("aSubmit").disabled=false;
+  if(r.ok){$("aPin").value="";$("aCode").value="";setUser(r.d.user)}
+  else $("aErr").textContent=ERR[r.d.error]||ERR.x;
+};
+$("logout").onclick=async e=>{e.preventDefault();await api("/api/logout","POST");showAuth()};
+let verify=false;
+(async()=>{try{const h=await fetch("/api/health");if(!h.ok)return;verify=!!(await h.json()).verify}catch(e){return}
+ serverMode=true;const m=await api("/api/me");if(m.ok)setUser(m.d.user);else{authMode("login");gate(true)}})();
+</script>
+</body>
+</html>
